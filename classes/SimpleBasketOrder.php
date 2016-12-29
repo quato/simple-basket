@@ -27,6 +27,7 @@ class SimpleBasketOrder
 
 	/* ------------------- Определения класса  ---------------------- */	
 	const ITEMS			= 'SIMPLE_BASKET_ITEMS';
+	const ITEMS_COUNT   = 'SIMPLE_BASKET_ITEMS_COUNT';
 	const TITLE			= 'SIMPLE_BASKET_TITLE';
 	const QUO			= 'SIMPLE_BASKET_QUO';
 	const PRICE			= 'SIMPLE_BASKET_PRICE';
@@ -42,6 +43,7 @@ class SimpleBasketOrder
 	 * @var mixed
 	 */
 	 public $items;
+	 public $itemsCount;
 
 
 	/**
@@ -50,6 +52,7 @@ class SimpleBasketOrder
 	 private function __construct()
 	 {
 		$this->items = (isset($_SESSION[self::ITEMS])) ? $_SESSION[self::ITEMS] : array();
+		$this->itemsCount = (isset($_SESSION[self::ITEMS_COUNT])) ? $_SESSION[self::ITEMS_COUNT] : array();
 		$this->userName = (isset($_SESSION[self::USER_NAME])) ? $_SESSION[self::USER_NAME] : '';
 		$this->userEmail = (isset($_SESSION[self::USER_EMAIL])) ? $_SESSION[self::USER_EMAIL] : '';
 		$this->userPhone = (isset($_SESSION[self::USER_PHONE])) ? $_SESSION[self::USER_PHONE] : '';
@@ -63,6 +66,7 @@ class SimpleBasketOrder
 	 public function __destruct()
 	 {
 		$_SESSION[self::ITEMS] = $this->items;
+		$_SESSION[self::ITEMS_COUNT] = $this->itemsCount;
 		$_SESSION[self::USER_NAME] = $this->userName;
 		$_SESSION[self::USER_EMAIL] = $this->userEmail;
 		$_SESSION[self::USER_PHONE] = $this->userPhone;
@@ -156,7 +160,7 @@ class SimpleBasketOrder
 	 * @param float price цена товара
 	 * @param string category категория товара
 	 */
-	 public function add($id, $title, $price, $category='')
+	 public function add($id, $title, $price, $category='', $cnt)
 	 {
 		
 		// Нормализуем цену
@@ -180,19 +184,30 @@ class SimpleBasketOrder
 		if (array_key_exists($id, $this->items))
 		{			
 			// Увеличим количество
-			$this->items[$id][self::QUO]++;	
+			if ($cnt) {
+				$this->items[$id][self::QUO] += $cnt;
+			}
+			else {
+				$this->items[$id][self::QUO]++;	
+			}
+			
 		}
 		else
 		{
-			// Добавим элемент
+			if (!$cnt) {
+				$cnt = 1;
+			}
+
 			$this->items[$id] = array
 			(
 				self::TITLE => $title,
-				self::QUO	=> 1,
+				self::QUO	=> $cnt,
 				self::PRICE => $price,
 				self::CATEGORY => $category
 			);			
 		}
+
+		$this->itemsCount = $this->getTotalCount();
 
 	 }
 
@@ -218,6 +233,9 @@ class SimpleBasketOrder
 				$this->items[$id][self::QUO] = $quo;				
 			}
 		}
+
+		$this->itemsCount = $this->getTotalCount();
+
 	 }
 
 	/**
@@ -226,6 +244,7 @@ class SimpleBasketOrder
 	 public function clear()
 	 {
 		 $this->items = array();
+		 $this->itemsCount = array();
 		 $this->userComment = '';
 	 }
 
@@ -272,6 +291,18 @@ class SimpleBasketOrder
 	 	$total = 0;
 		foreach ($this->items as $id=>$item)
 			$total += $item[self::QUO] * $item[self::PRICE];
+		return $total;
+	 }
+
+	 /**
+	 * Возвращает количество товаров в корзине
+	 * @return int количество товара в корзине
+	 */
+	 public function getTotalCount()
+	 {
+	 	$total = 0;
+		foreach ($this->items as $id=>$item)
+			$total += $item[self::QUO];
 		return $total;
 	 }
 
