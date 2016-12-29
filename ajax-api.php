@@ -29,8 +29,8 @@ class SimpleBasketAPI
 			add_action( 'wp_ajax_nopriv_getData', array( &$this, 'getData'));
 			add_action( 'wp_ajax_getData', array( &$this, 'getData'));
 
-			add_action( 'wp_ajax_nopriv_add', array( &$this, 'add'));
-			add_action( 'wp_ajax_add', array( &$this, 'add'));
+			add_action( 'wp_ajax_nopriv_basketAdd', array( &$this, 'basketAdd'));
+			add_action( 'wp_ajax_basketAdd', array( &$this, 'basketAdd'));
 
 
 
@@ -46,7 +46,7 @@ class SimpleBasketAPI
 	 */
 	public function init()
 	{
-		wp_enqueue_script('simple-basket', plugin_dir_url( __FILE__ ) . 'js/simple-basket.min.js', array( 'jquery' ) );
+		wp_enqueue_script('simple-basket', plugin_dir_url( __FILE__ ) . 'js/simple-basket.js', array( 'jquery' ) );
 		wp_localize_script('simple-basket', 'SimpleBasket', array(
 		    'ajaxurl' => admin_url( 'admin-ajax.php' ),
 		    'nonce' => wp_create_nonce( 'ajax-example-nonce' )
@@ -65,7 +65,7 @@ class SimpleBasketAPI
 	/**
 	 * Функция ответа
 	 */
-	public function responce($result)
+	public function response($result)
 	{
 		header('Content-Type: application/json');
 		echo json_encode($result);
@@ -76,24 +76,29 @@ class SimpleBasketAPI
 	public function getTime()
 	{
 		$this->validateNonce();
-		$this->responce(array(
+		$this->response(array(
 			'time' => date('d.m.Y H:i:s')
 		));
 	}
 
-	// Возврат корзины
+	// Возврат данных корзины
 	public function getData()
 	{
 		$this->validateNonce();
-		$this->responce($this->basket);
+		$this->response($this->basket);
 	}
 
 	// Добавление товара в корзину
-	public function add()
+	public function basketAdd()
 	{
 		$this->validateNonce();
 		if (!isset($_REQUEST['id']))
 			die ( 'ID not specified' );
+
+		if (!isset($_REQUEST['cnt']))
+			$cnt = 1;
+		else
+			$cnt = (int) $_REQUEST['cnt'];
 
 			// Код товара
 			$id = (int) $_REQUEST['id'];
@@ -119,7 +124,7 @@ class SimpleBasketAPI
 			}
 			
 			// Добавляем в корзину
-			if (!empty($title)) $this->basket->add($id, $title, $price, $category);
-		$this->responce($this->basket);
+			if (!empty($title)) $this->basket->add($id, $title, $price, $category, $cnt);
+		$this->response($this->basket);
 	}
 }
